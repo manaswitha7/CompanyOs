@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  /* Chrome / dark surfaces */
+  --ink: #0e1116;
+  --ink-soft: #171a21;
+  --ink-line: #262b34;
+
+  /* Content surfaces */
+  --paper: #f7f5f0;
+  --paper-raised: #ffffff;
+  --paper-line: #e7e3d9;
+
+  /* Text */
+  --graphite: #1b1e23;
+  --graphite-muted: #6b7078;
+
+  /* Signal — used only for active / AI / focus moments, never decoration */
+  --signal: #2451ff;
+  --signal-soft: #e8edff;
+
+  /* Functional status — deliberately distinct from --signal */
+  --status-queued: #b8860b;
+  --status-queued-bg: #fdf6e3;
+  --status-processing: #1d6fd6;
+  --status-processing-bg: #e9f2fd;
+  --status-done: #1f7a4d;
+  --status-done-bg: #e9f7ef;
+  --status-failed: #b0362c;
+  --status-failed-bg: #fbeae8;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-line: var(--ink-line);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-line: var(--paper-line);
+  --color-graphite: var(--graphite);
+  --color-graphite-muted: var(--graphite-muted);
+  --color-signal: var(--signal);
+  --color-signal-soft: var(--signal-soft);
+
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--paper);
+  color: var(--graphite);
+}
+
+/* Consistent focus ring in the signal color, respected everywhere */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
