@@ -1,0 +1,1834 @@
+
+# Company OS
+
+> An internal company knowledge and operating system that centralizes organizational data, documents, and knowledge retrieval into a single platform.
+
+Company OS is designed to act as a **company brain** — connecting company data, documents, organizational information, and AI-powered retrieval through a unified application.
+
+The system is being developed as a modular platform where individual capabilities are built as independent services and then wired together into a larger workflow.
+
+---
+
+# 1. Overview
+
+Company OS provides a centralized platform for:
+
+- Company information
+- Organizational structures
+- Users and workspaces
+- Documents
+- Document storage
+- Document extraction
+- Document chunking
+- Semantic embeddings
+- Knowledge retrieval
+- AI-powered question answering
+- Source citations
+- Authentication and authorization
+
+The core philosophy is:
+
+> **Build individual capabilities as small, independent tools, then wire them together into a complete company operating system.**
+
+The initial implementation intentionally avoids introducing unnecessary infrastructure such as Elasticsearch, OpenSearch, Vespa, Kafka, Kubernetes, or Airflow.
+
+PostgreSQL is used as the primary database, with `pgvector` providing vector search capabilities.
+
+---
+
+# 2. Architecture
+
+At a high level:
+
+```text
+                         Company OS
+                              |
+             +----------------+----------------+
+             |                                 |
+          Frontend                          Backend
+          Next.js                          FastAPI
+             |                                 |
+             +---------------+-----------------+
+                             |
+                     Application Services
+                             |
+             +---------------+----------------+
+             |                                |
+        PostgreSQL                          MinIO
+        + pgvector                       Object Storage
+             |                                |
+     Relational data                    Documents/PDFs
+     Metadata                           Uploaded files
+     Chunks
+     Embeddings
+````
+
+The document knowledge pipeline is:
+
+```text
+User
+ |
+ | Upload document
+ v
+Frontend
+ |
+ v
+FastAPI Backend
+ |
+ +----------------------+
+ |                      |
+ v                      v
+PostgreSQL              MinIO
+(metadata)              (file)
+ |
+ v
+Text Extraction
+ |
+ v
+Chunking
+ |
+ v
+Embedding Model
+ |
+ v
+384-dimensional vector
+ |
+ v
+pgvector
+ |
+ v
+Hybrid Search
+ |
+ v
+RAG
+ |
+ v
+LLM
+ |
+ v
+Answer + Citations
+```
+
+---
+
+# 3. Technology Stack
+
+## Frontend
+
+| Technology   | Purpose            |
+| ------------ | ------------------ |
+| Next.js      | Frontend framework |
+| React        | UI components      |
+| TypeScript   | Type safety        |
+| Tailwind CSS | Styling            |
+
+---
+
+## Backend
+
+| Technology | Purpose                     |
+| ---------- | --------------------------- |
+| Python     | Backend language            |
+| FastAPI    | REST API framework          |
+| Uvicorn    | ASGI server                 |
+| SQLAlchemy | ORM                         |
+| Alembic    | Database migrations         |
+| Pydantic   | Request/response validation |
+| Passlib    | Password hashing            |
+| JWT        | Authentication              |
+
+---
+
+## Database
+
+| Technology | Purpose                              |
+| ---------- | ------------------------------------ |
+| PostgreSQL | Primary relational database          |
+| pgvector   | Vector storage and similarity search |
+
+PostgreSQL stores:
+
+* Users
+* Workspaces
+* Teams
+* Organizations
+* Documents
+* Document chunks
+* Metadata
+* Embeddings
+* Permissions
+* Application entities
+
+---
+
+## Object Storage
+
+| Technology | Purpose                      |
+| ---------- | ---------------------------- |
+| MinIO      | S3-compatible object storage |
+
+MinIO stores uploaded files such as:
+
+* PDF documents
+* Company documents
+* Other future file types
+
+---
+
+## AI / Retrieval
+
+| Technology            | Purpose                        |
+| --------------------- | ------------------------------ |
+| Sentence Transformers | Text embeddings                |
+| pgvector              | Vector similarity search       |
+| PostgreSQL            | Keyword retrieval              |
+| RAG                   | Retrieval-augmented generation |
+
+The current embedding model produces:
+
+```text
+384-dimensional vectors
+```
+
+---
+
+# 4. Project Structure
+
+The repository is organized approximately as follows:
+
+```text
+company-os/
+│
+├── README.md
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+│
+├── backend/
+│   │
+│   ├── app/
+│   │   ├── api/
+│   │   │
+│   │   ├── models/
+│   │   │   ├── user.py
+│   │   │   ├── workspace.py
+│   │   │   ├── organization.py
+│   │   │   ├── team.py
+│   │   │   └── ...
+│   │   │
+│   │   ├── services/
+│   │   │   ├── auth/
+│   │   │   ├── storage/
+│   │   │   └── ingestion/
+│   │   │
+│   │   ├── database/
+│   │   └── main.py
+│   │
+│   ├── migrations/
+│   │   └── versions/
+│   │
+│   ├── requirements.txt
+│   └── ...
+│
+└── frontend/
+    │
+    ├── app/
+    │   ├── login/
+    │   ├── register/
+    │   └── ...
+    │
+    ├── lib/
+    │   └── api.ts
+    │
+    ├── package.json
+    └── ...
+```
+
+---
+
+# 5. Prerequisites
+
+Before running Company OS, install the following.
+
+### Docker Desktop
+
+Install Docker Desktop:
+
+```text
+https://www.docker.com/products/docker-desktop/
+```
+
+Verify:
+
+```powershell
+docker --version
+```
+
+and:
+
+```powershell
+docker compose version
+```
+
+Docker Desktop must be running before starting the infrastructure.
+
+---
+
+### Python
+
+Python is required for the backend.
+
+Verify:
+
+```powershell
+python --version
+```
+
+The project currently uses a Python virtual environment:
+
+```text
+backend/.venv
+```
+
+Do not commit `.venv` to Git.
+
+---
+
+### Node.js
+
+Node.js is required for the Next.js frontend.
+
+Verify:
+
+```powershell
+node --version
+npm --version
+```
+
+---
+
+# 6. Clone the Repository
+
+Clone the repository:
+
+```powershell
+git clone <REPOSITORY_URL>
+```
+
+Enter the project:
+
+```powershell
+cd company-os
+```
+
+Check the repository:
+
+```powershell
+git status
+```
+
+---
+
+# 7. Environment Configuration
+
+Environment variables should not be committed to Git.
+
+Create a local environment file based on the example:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+If the backend uses its own environment file:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+```
+
+Configure the required values.
+
+Typical configuration includes:
+
+```text
+DATABASE_URL
+POSTGRES_USER
+POSTGRES_PASSWORD
+POSTGRES_DB
+
+MINIO_ENDPOINT
+MINIO_ACCESS_KEY
+MINIO_SECRET_KEY
+MINIO_BUCKET
+
+JWT_SECRET_KEY
+JWT_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES
+```
+
+Use the values expected by the current `docker-compose.yml` and backend configuration.
+
+Do not commit `.env`.
+
+---
+
+# 8. Docker Infrastructure
+
+Docker is used to provide the infrastructure required by Company OS.
+
+The primary infrastructure services are:
+
+```text
+PostgreSQL + pgvector
+MinIO
+```
+
+Start the infrastructure:
+
+```powershell
+docker compose up -d
+```
+
+Check running containers:
+
+```powershell
+docker compose ps
+```
+
+View logs:
+
+```powershell
+docker compose logs
+```
+
+View logs for a specific service:
+
+```powershell
+docker compose logs postgres
+```
+
+or:
+
+```powershell
+docker compose logs minio
+```
+
+Stop the infrastructure:
+
+```powershell
+docker compose down
+```
+
+---
+
+# 9. PostgreSQL and pgvector
+
+PostgreSQL is the primary application database.
+
+It stores both traditional relational information and vector embeddings.
+
+The database architecture is:
+
+```text
+PostgreSQL
+│
+├── Users
+├── Workspaces
+├── Teams
+├── Organizations
+├── Documents
+├── Document Chunks
+├── Permissions
+├── Application Metadata
+└── Embeddings
+       │
+       └── pgvector
+```
+
+The document chunk embedding column is currently:
+
+```text
+vector(384)
+```
+
+This means each document chunk stores a 384-dimensional embedding.
+
+---
+
+## Connect to PostgreSQL
+
+If PostgreSQL is running in Docker:
+
+```powershell
+docker exec -it companyos-postgres psql -U companyos -d companyos
+```
+
+The exact container name and credentials should match `docker-compose.yml` / `.env`.
+
+---
+
+## List tables
+
+Inside PostgreSQL:
+
+```sql
+\dt
+```
+
+---
+
+## Check migrations
+
+```sql
+SELECT * FROM alembic_version;
+```
+
+---
+
+## Exit PostgreSQL
+
+```sql
+\q
+```
+
+---
+
+# 10. MinIO Object Storage
+
+MinIO is used as the document object-storage layer.
+
+Instead of storing PDF files directly inside PostgreSQL, PostgreSQL stores metadata while MinIO stores the actual file.
+
+Architecture:
+
+```text
+PDF
+ |
+ v
+MinIO
+ |
+ +-- documents/
+       |
+       +-- file-uuid-1.pdf
+       +-- file-uuid-2.pdf
+       +-- ...
+```
+
+The database stores information such as:
+
+```text
+document_id
+filename
+file_type
+storage_key
+workspace_id
+```
+
+Example storage key:
+
+```text
+documents/<uuid>.pdf
+```
+
+This separation keeps database records lightweight while allowing object storage to handle the actual files.
+
+---
+
+# 11. Backend Setup
+
+Move into the backend:
+
+```powershell
+cd backend
+```
+
+Create a virtual environment:
+
+```powershell
+python -m venv .venv
+```
+
+Activate it on Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+The terminal should show something similar to:
+
+```text
+(.venv) PS ...
+```
+
+---
+
+## Install dependencies
+
+```powershell
+pip install -r requirements.txt
+```
+
+If dependencies have changed:
+
+```powershell
+pip install -r requirements.txt
+```
+
+---
+
+# 12. Database Migrations
+
+Company OS uses **Alembic** for database schema management.
+
+Do not manually recreate application tables on another machine.
+
+After the database is running:
+
+```powershell
+alembic upgrade head
+```
+
+This applies all migrations in:
+
+```text
+backend/migrations/versions/
+```
+
+---
+
+## Check current migration
+
+```powershell
+alembic current
+```
+
+---
+
+## View migration history
+
+```powershell
+alembic history
+```
+
+---
+
+## Create a migration
+
+When the SQLAlchemy models change:
+
+```powershell
+alembic revision --autogenerate -m "describe change"
+```
+
+Review the generated migration before applying it.
+
+Then:
+
+```powershell
+alembic upgrade head
+```
+
+---
+
+# 13. Running the Backend
+
+From:
+
+```text
+company-os/backend
+```
+
+activate the virtual environment:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Start FastAPI:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+The backend should be available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+## Swagger API Documentation
+
+Open:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Swagger can be used to test backend endpoints during development.
+
+---
+
+## Health Check
+
+If a health endpoint is available, use:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Otherwise verify that the FastAPI server starts without errors and that:
+
+```text
+/docs
+```
+
+loads successfully.
+
+---
+
+# 14. Frontend Setup
+
+Open a new terminal.
+
+Move to:
+
+```powershell
+cd frontend
+```
+
+Install dependencies:
+
+```powershell
+npm install
+```
+
+This reads:
+
+```text
+package.json
+```
+
+and installs the required Node.js packages.
+
+---
+
+# 15. Running the Frontend
+
+Start the Next.js development server:
+
+```powershell
+npm run dev
+```
+
+The frontend should normally be available at:
+
+```text
+http://localhost:3000
+```
+
+Open it in a browser.
+
+---
+
+# 16. Authentication
+
+Company OS currently implements:
+
+```text
+Registration
+Login
+JWT authentication
+Current-user endpoint
+```
+
+Authentication flow:
+
+```text
+                 +-------------+
+                 |   Register  |
+                 +------+------+
+                        |
+                        v
+                POST /auth/register
+                        |
+                        v
+                Create workspace
+                        |
+                        v
+                  Create user
+                        |
+                        v
+                  Hash password
+                        |
+                        v
+                   Create JWT
+                        |
+                        v
+                 Frontend stores
+                  access token
+```
+
+Login:
+
+```text
+Frontend
+   |
+   v
+POST /auth/login
+   |
+   v
+Find user
+   |
+   v
+Verify password
+   |
+   v
+Create JWT
+   |
+   v
+Return access token
+```
+
+Current-user verification:
+
+```text
+GET /auth/me
+        |
+        v
+Decode JWT
+        |
+        v
+Find current user
+        |
+        v
+Return user information
+```
+
+---
+
+## Registration
+
+Open:
+
+```text
+http://localhost:3000/register
+```
+
+Provide:
+
+```text
+Name
+Email
+Password
+Confirm Password
+```
+
+The backend creates:
+
+```text
+User
+Workspace
+```
+
+and returns an access token.
+
+---
+
+## Login
+
+Open:
+
+```text
+http://localhost:3000/login
+```
+
+Enter the registered email and password.
+
+---
+
+# 17. Document Ingestion Pipeline
+
+The document ingestion system is built as separate components.
+
+Current architecture:
+
+```text
+                    Upload
+                       |
+                       v
+                 FastAPI API
+                       |
+                       v
+                    MinIO
+                       |
+                       v
+              Document Metadata
+                  PostgreSQL
+                       |
+                       v
+               Text Extraction
+                       |
+                       v
+                   Chunking
+                       |
+                       v
+                 Embeddings
+                       |
+                       v
+                 PostgreSQL
+                   pgvector
+```
+
+---
+
+## Step 1 — Upload
+
+A user uploads a document through the frontend.
+
+The backend receives the file.
+
+---
+
+## Step 2 — MinIO
+
+The actual document is stored in MinIO.
+
+Example:
+
+```text
+documents/
+└── <uuid>.pdf
+```
+
+---
+
+## Step 3 — Document Record
+
+PostgreSQL stores metadata about the document.
+
+Typical information:
+
+```text
+id
+filename
+file_type
+storage_key
+workspace_id
+created_at
+```
+
+---
+
+## Step 4 — Text Extraction
+
+The backend retrieves the document from MinIO and extracts readable text.
+
+For PDFs, the extracted text is passed to the ingestion pipeline.
+
+---
+
+## Step 5 — Chunking
+
+Large documents are split into smaller chunks.
+
+For example:
+
+```text
+Document
+   |
+   +-- Chunk 0
+   +-- Chunk 1
+   +-- Chunk 2
+   +-- Chunk 3
+```
+
+The database stores:
+
+```text
+document_id
+chunk_index
+content
+created_at
+```
+
+Page metadata can also be associated with chunks to support source citations.
+
+---
+
+# 18. Embeddings
+
+Each document chunk is converted into a numerical vector.
+
+Current embedding configuration:
+
+```text
+Embedding dimension: 384
+```
+
+Conceptually:
+
+```text
+Text Chunk
+    |
+    v
+Embedding Model
+    |
+    v
+[0.0208, 0.0149, 0.0332, ...]
+    |
+    v
+384 dimensions
+    |
+    v
+pgvector
+```
+
+The embedding is stored in PostgreSQL using:
+
+```text
+vector(384)
+```
+
+The same embedding model must be used for:
+
+```text
+Document chunks
+```
+
+and later for:
+
+```text
+User search queries
+```
+
+Otherwise vector similarity will not be meaningful.
+
+---
+
+# 19. Current Retrieval Architecture
+
+The retrieval layer is being developed using a hybrid-search approach.
+
+We intentionally do not introduce another dedicated search database in Phase 1.
+
+We are using:
+
+```text
+PostgreSQL
+│
+├── Relational data
+├── Metadata
+├── Keyword retrieval
+└── pgvector semantic retrieval
+```
+
+Hybrid search will combine:
+
+```text
+                  User Query
+                      |
+          +-----------+-----------+
+          |                       |
+          v                       v
+   Keyword Search          Vector Search
+   PostgreSQL              pgvector
+          |                       |
+          +-----------+-----------+
+                      |
+                      v
+                 Result Fusion
+                      |
+                      v
+                   Top-K
+                      |
+                      v
+            Document + Page Metadata
+                      |
+                      v
+                    RAG
+```
+
+The search result should eventually contain enough information for citations:
+
+```json
+{
+  "document_id": 2,
+  "chunk_id": 3,
+  "filename": "document.pdf",
+  "content": "Relevant text...",
+  "page_number": 4,
+  "score": 0.91
+}
+```
+
+---
+
+# 20. Development Workflow
+
+The recommended development workflow is:
+
+```text
+1. Pull latest code
+        |
+        v
+2. Start Docker
+        |
+        v
+3. Check PostgreSQL + MinIO
+        |
+        v
+4. Activate backend environment
+        |
+        v
+5. Apply migrations
+        |
+        v
+6. Start FastAPI
+        |
+        v
+7. Start Next.js
+        |
+        v
+8. Test feature
+        |
+        v
+9. Commit changes
+```
+
+---
+
+## Start the infrastructure
+
+From the repository root:
+
+```powershell
+docker compose up -d
+```
+
+---
+
+## Update the repository
+
+```powershell
+git pull
+```
+
+---
+
+## Activate backend
+
+```powershell
+cd backend
+.venv\Scripts\Activate.ps1
+```
+
+---
+
+## Apply migrations
+
+```powershell
+alembic upgrade head
+```
+
+---
+
+## Start backend
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+---
+
+## Start frontend
+
+In another terminal:
+
+```powershell
+cd frontend
+npm run dev
+```
+
+---
+
+# 21. Database Verification
+
+To verify the database:
+
+```powershell
+docker exec -it companyos-postgres psql -U companyos -d companyos
+```
+
+List tables:
+
+```sql
+\dt
+```
+
+Check users:
+
+```sql
+SELECT
+    id,
+    name,
+    email,
+    role,
+    workspace_id
+FROM users
+ORDER BY id DESC;
+```
+
+Check workspaces:
+
+```sql
+SELECT *
+FROM workspaces
+ORDER BY id DESC;
+```
+
+Check documents:
+
+```sql
+SELECT
+    id,
+    filename,
+    file_type,
+    storage_key
+FROM documents
+ORDER BY id DESC;
+```
+
+Check chunks:
+
+```sql
+SELECT
+    id,
+    document_id,
+    chunk_index,
+    LENGTH(content) AS characters
+FROM document_chunks
+ORDER BY id DESC;
+```
+
+Check embeddings:
+
+```sql
+SELECT
+    id,
+    document_id,
+    chunk_index,
+    embedding IS NOT NULL AS has_embedding
+FROM document_chunks
+ORDER BY id DESC;
+```
+
+Check embedding dimensions:
+
+```sql
+SELECT
+    id,
+    vector_dims(embedding) AS dimensions
+FROM document_chunks
+WHERE embedding IS NOT NULL;
+```
+
+Expected:
+
+```text
+384
+```
+
+---
+
+# 22. Useful Docker Commands
+
+## Start services
+
+```powershell
+docker compose up -d
+```
+
+## Stop services
+
+```powershell
+docker compose down
+```
+
+## Restart services
+
+```powershell
+docker compose restart
+```
+
+## View running containers
+
+```powershell
+docker ps
+```
+
+## View Compose services
+
+```powershell
+docker compose ps
+```
+
+## View logs
+
+```powershell
+docker compose logs
+```
+
+## Follow logs
+
+```powershell
+docker compose logs -f
+```
+
+## PostgreSQL logs
+
+```powershell
+docker compose logs postgres
+```
+
+## MinIO logs
+
+```powershell
+docker compose logs minio
+```
+
+---
+
+## WARNING: Docker volumes
+
+Do not casually run:
+
+```powershell
+docker compose down -v
+```
+
+The `-v` option can remove Docker volumes.
+
+Volumes may contain:
+
+```text
+PostgreSQL database data
+MinIO stored objects
+```
+
+Only use it when intentionally resetting the local development environment.
+
+---
+
+# 23. Useful Backend Commands
+
+Activate environment:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Run backend:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+Check migration:
+
+```powershell
+alembic current
+```
+
+Migration history:
+
+```powershell
+alembic history
+```
+
+Apply migrations:
+
+```powershell
+alembic upgrade head
+```
+
+Create migration:
+
+```powershell
+alembic revision --autogenerate -m "description"
+```
+
+---
+
+# 24. Useful Frontend Commands
+
+Install packages:
+
+```powershell
+npm install
+```
+
+Development server:
+
+```powershell
+npm run dev
+```
+
+Production build:
+
+```powershell
+npm run build
+```
+
+Production server:
+
+```powershell
+npm start
+```
+
+Lint:
+
+```powershell
+npm run lint
+```
+
+Available scripts depend on the current `package.json`.
+
+---
+
+# 25. Troubleshooting
+
+## Docker is not running
+
+Error examples:
+
+```text
+Cannot connect to the Docker daemon
+```
+
+Solution:
+
+1. Open Docker Desktop.
+2. Wait until Docker is running.
+3. Run:
+
+```powershell
+docker ps
+```
+
+---
+
+## PostgreSQL connection failure
+
+Check:
+
+```powershell
+docker compose ps
+```
+
+Then:
+
+```powershell
+docker compose logs postgres
+```
+
+Verify that the database values in `.env` match the Docker configuration.
+
+---
+
+## MinIO connection failure
+
+Check:
+
+```powershell
+docker compose ps
+```
+
+Then:
+
+```powershell
+docker compose logs minio
+```
+
+Verify:
+
+```text
+MINIO_ENDPOINT
+MINIO_ACCESS_KEY
+MINIO_SECRET_KEY
+MINIO_BUCKET
+```
+
+---
+
+## Backend import error
+
+Make sure the virtual environment is activated:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Then reinstall dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Run:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+from the `backend` directory.
+
+---
+
+## Alembic migration error
+
+First check:
+
+```powershell
+alembic current
+```
+
+Then:
+
+```powershell
+alembic history
+```
+
+Do not manually change the `alembic_version` table unless you understand the migration state and have intentionally decided to repair it.
+
+---
+
+## Port already in use
+
+If port `8000` is already being used:
+
+```powershell
+uvicorn app.main:app --reload --port 8001
+```
+
+If port `3000` is being used, Next.js will normally offer another available port.
+
+---
+
+## Frontend cannot reach backend
+
+Verify the backend is running:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Then verify the frontend API configuration points to the correct backend URL.
+
+---
+
+## Registration does not work
+
+Check:
+
+```text
+POST /auth/register
+```
+
+through Swagger:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Then verify PostgreSQL:
+
+```sql
+SELECT * FROM users;
+```
+
+and:
+
+```sql
+SELECT * FROM workspaces;
+```
+
+---
+
+## Embedding model download is slow
+
+The embedding model may be downloaded the first time it is used.
+
+Subsequent runs normally use the local model cache.
+
+The current embedding output should have:
+
+```text
+384 dimensions
+```
+
+---
+
+# 26. Security Notes
+
+Never commit secrets to Git.
+
+Do not commit:
+
+```text
+.env
+passwords
+JWT secrets
+MinIO secret keys
+database passwords
+API keys
+access tokens
+```
+
+Use:
+
+```text
+.env.example
+```
+
+for configuration documentation.
+
+Example:
+
+```text
+DATABASE_URL=<your-local-database-url>
+JWT_SECRET_KEY=<generate-a-secret>
+MINIO_ACCESS_KEY=<local-access-key>
+MINIO_SECRET_KEY=<local-secret-key>
+```
+
+Each developer should maintain their own local `.env`.
+
+---
+
+# 27. Current Development Status
+
+## Completed
+
+### Infrastructure
+
+* [x] PostgreSQL
+* [x] pgvector
+* [x] MinIO
+* [x] Docker-based infrastructure
+
+### Database
+
+* [x] SQLAlchemy models
+* [x] Alembic migrations
+* [x] Users
+* [x] Workspaces
+* [x] Teams
+* [x] Organizational entities
+* [x] Documents
+* [x] Document chunks
+* [x] Document permissions
+* [x] Vector embeddings
+
+### Authentication
+
+* [x] User registration
+* [x] Password hashing
+* [x] Login
+* [x] JWT access tokens
+* [x] Current-user endpoint
+* [x] Login frontend
+* [x] Registration frontend
+
+### Document Pipeline
+
+* [x] Document upload
+* [x] MinIO storage
+* [x] Document metadata
+* [x] Text extraction
+* [x] Document chunking
+* [x] Embedding generation
+* [x] 384-dimensional vectors
+* [x] Embeddings stored in pgvector
+
+---
+
+# 28. Future Roadmap
+
+The next major component is **Hybrid Search**.
+
+## Phase 1 — Retrieval
+
+```text
+User Query
+    |
+    +----------------------+
+    |                      |
+    v                      v
+Keyword Search        Vector Search
+PostgreSQL            pgvector
+    |                      |
+    +----------+-----------+
+               |
+               v
+         Result Fusion
+               |
+               v
+             Top-K
+```
+
+---
+
+## Phase 2 — RAG
+
+After retrieval is working:
+
+```text
+User Question
+      |
+      v
+Hybrid Search
+      |
+      v
+Top Relevant Chunks
+      |
+      v
+Context Builder
+      |
+      v
+LLM
+      |
+      v
+Generated Answer
+      |
+      v
+Citations
+```
+
+---
+
+## Phase 3 — Company Knowledge Layer
+
+The retrieval layer can eventually be expanded to include:
+
+```text
+Documents
+    +
+People
+    +
+Teams
+    +
+Projects
+    +
+Meetings
+    +
+Tasks
+    +
+CRM Data
+    +
+External Connectors
+```
+
+This will allow Company OS to evolve from a document RAG system into a broader **company knowledge and operating system**.
+
+---
+
+# Development Principle
+
+Company OS follows a simple engineering principle:
+
+> **Break the system into sub-tools → build each tool independently → test each tool → wire the tools together → stack them into the complete system.**
+
+For example:
+
+```text
+Storage
+   ↓
+Ingestion
+   ↓
+Extraction
+   ↓
+Chunking
+   ↓
+Embeddings
+   ↓
+Vector Storage
+   ↓
+Keyword Search
+   ↓
+Vector Search
+   ↓
+Hybrid Search
+   ↓
+RAG
+   ↓
+LLM
+   ↓
+Citations
+```
+
+This keeps the architecture modular, testable, and easier to scale.
+
+---
+
+# Quick Start
+
+For an experienced developer, the complete local startup sequence is:
+
+### Terminal 1 — Infrastructure
+
+```powershell
+git clone <REPOSITORY_URL>
+cd company-os
+
+Copy-Item .env.example .env
+
+docker compose up -d
+docker compose ps
+```
+
+### Terminal 2 — Backend
+
+```powershell
+cd backend
+
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+
+alembic upgrade head
+
+uvicorn app.main:app --reload
+```
+
+### Terminal 3 — Frontend
+
+```powershell
+cd frontend
+
+npm install
+npm run dev
+```
+
+Then open:
+
+```text
+Frontend:
+http://localhost:3000
+
+Backend:
+http://127.0.0.1:8000
+
+API Documentation:
+http://127.0.0.1:8000/docs
+```
+
+---
+

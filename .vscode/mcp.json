@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "company-os": {
+      "type": "stdio",
+      "command": "D:\\Leucine\\company-os\\backend\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "app.services.mcp.server"
+      ],
+      "cwd": "D:\\Leucine\\company-os\\backend"
+    }
+  },
+  "inputs": []
+}
